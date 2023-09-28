@@ -4,6 +4,7 @@ import (
 	"github.com/doug-martin/goqu/v9"
 	_ "github.com/doug-martin/goqu/v9/dialect/mysql"
 	_ "github.com/go-sql-driver/mysql"
+	"strings"
 )
 
 type Option func(*defaultOptions)
@@ -30,6 +31,9 @@ func GenSelect(table string, opts ...Option) (string, []interface{}, error) {
 	for _, apply := range opts {
 		apply(df)
 	}
+	if strings.Contains(table, "`") {
+		table = strings.ReplaceAll(table, "`", "")
+	}
 	w := df.wrapper.From(table).Select().Where(df.exp...)
 	if len(df.fields) != 0 {
 		w = w.Select(df.fields...)
@@ -54,11 +58,17 @@ func GenDelete(table string, opts ...Option) (string, []interface{}, error) {
 	for _, apply := range opts {
 		apply(df)
 	}
+	if strings.Contains(table, "`") {
+		table = strings.ReplaceAll(table, "`", "")
+	}
 	return df.wrapper.Delete(table).Where(df.exp...).ToSQL()
 }
 
 func GenInstall(table string, rows interface{}) (string, []interface{}, error) {
 	df := newDefaultOptions()
+	if strings.Contains(table, "`") {
+		table = strings.ReplaceAll(table, "`", "")
+	}
 	return df.wrapper.Insert(table).Rows(rows).ToSQL()
 }
 
@@ -66,6 +76,9 @@ func GenUpdate(table string, opts ...Option) (string, []interface{}, error) {
 	df := newDefaultOptions()
 	for _, apply := range opts {
 		apply(df)
+	}
+	if strings.Contains(table, "`") {
+		table = strings.ReplaceAll(table, "`", "")
 	}
 	return df.wrapper.From(table).Update().Where(df.exp...).Set(df.set).ToSQL()
 }
