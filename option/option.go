@@ -9,16 +9,17 @@ import (
 
 type Option func(*defaultOptions)
 type defaultOptions struct {
-	wrapper goqu.DialectWrapper
-	fields  []interface{}
-	desc    string
-	asc     string
-	group   string
-	having  string
-	offset  uint
-	limit   uint
-	exp     []goqu.Expression
-	set     goqu.Record
+	wrapper      goqu.DialectWrapper
+	fields       []interface{}
+	desc         string
+	asc          string
+	group        string
+	having       string
+	offset       uint
+	limit        uint
+	errDoNothing bool // 插入出错跳过
+	exp          []goqu.Expression
+	set          goqu.Record
 }
 
 func newDefaultOptions() *defaultOptions {
@@ -68,6 +69,9 @@ func GenInstall(table string, rows interface{}) (string, []interface{}, error) {
 	df := newDefaultOptions()
 	if strings.Contains(table, "`") {
 		table = strings.ReplaceAll(table, "`", "")
+	}
+	if df.errDoNothing {
+		return df.wrapper.Insert(table).OnConflict(goqu.DoNothing()).Rows(rows).ToSQL()
 	}
 	return df.wrapper.Insert(table).Rows(rows).ToSQL()
 }
@@ -131,5 +135,10 @@ func WithPageSize(page, size uint) Option {
 			obj.offset = (page - 1) * size
 		}
 		obj.limit = size
+	}
+}
+func WithErrDoNothing(in any) Option {
+	return func(obj *defaultOptions) {
+		obj.errDoNothing = true
 	}
 }
