@@ -80,7 +80,6 @@ func GenInstall(table string, rows interface{}, opts ...Option) (string, []inter
 		return df.wrapper.Insert(table).OnConflict(goqu.DoNothing()).Rows(rows).ToSQL()
 	}
 	if df.errDoUpdate {
-		// 存在则更新,有且只能有一个更新字段.若存在多个则不会生效
 		if len(df.set.Cols()) == 0 {
 			return "", nil, errors.New("the update record error")
 		}
