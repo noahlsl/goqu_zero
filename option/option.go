@@ -87,7 +87,7 @@ func GenInstall(table string, rows interface{}, opts ...Option) (string, []inter
 		if df.uniqueKey == "" {
 			return "", nil, errors.New("the UniqueKey error")
 		}
-		return df.wrapper.Insert(table).OnConflict(goqu.DoUpdate(df.uniqueKey, df.set)).Rows(rows).ToSQL()
+		return df.wrapper.Insert(table).OnConflict(goqu.DoUpdate(df.uniqueKey, df.set).Where(df.exp...)).Rows(rows).ToSQL()
 	}
 	return df.wrapper.Insert(table).Rows(rows).ToSQL()
 }
