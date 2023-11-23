@@ -153,9 +153,17 @@ func WithPageSize(page, size uint) Option {
 		obj.limit = size
 	}
 }
-func WithErrDoNothing(in any) Option {
+func WithErrDoNothing() Option {
 	return func(obj *defaultOptions) {
 		obj.errDoNothing = true
+		obj.errDoUpdate = false
+	}
+}
+
+func WithErrDoUpdate() Option {
+	return func(obj *defaultOptions) {
+		obj.errDoNothing = false
+		obj.errDoUpdate = true
 	}
 }
 
