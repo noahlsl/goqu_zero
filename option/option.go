@@ -1,6 +1,7 @@
 package option
 
 import (
+	"errors"
 	"github.com/doug-martin/goqu/v9"
 	_ "github.com/doug-martin/goqu/v9/dialect/mysql"
 	_ "github.com/go-sql-driver/mysql"
@@ -18,8 +19,10 @@ type defaultOptions struct {
 	offset       uint
 	limit        uint
 	errDoNothing bool // 插入出错跳过
+	errDoUpdate  bool // 存在则更新
 	exp          []goqu.Expression
 	set          goqu.Record
+	uniqueKey    string
 }
 
 func newDefaultOptions() *defaultOptions {
@@ -65,13 +68,26 @@ func GenDelete(table string, opts ...Option) (string, []interface{}, error) {
 	return df.wrapper.Delete(table).Where(df.exp...).ToSQL()
 }
 
-func GenInstall(table string, rows interface{}) (string, []interface{}, error) {
+func GenInstall(table string, rows interface{}, opts ...Option) (string, []interface{}, error) {
 	df := newDefaultOptions()
+	for _, apply := range opts {
+		apply(df)
+	}
 	if strings.Contains(table, "`") {
 		table = strings.ReplaceAll(table, "`", "")
 	}
 	if df.errDoNothing {
 		return df.wrapper.Insert(table).OnConflict(goqu.DoNothing()).Rows(rows).ToSQL()
+	}
+	if df.errDoUpdate {
+		// 存在则更新,有且只能有一个更新字段.若存在多个则不会生效
+		if len(df.set.Cols()) == 0 {
+			return "", nil, errors.New("the update record error")
+		}
+		if df.uniqueKey == "" {
+			return "", nil, errors.New("the UniqueKey error")
+		}
+		return df.wrapper.Insert(table).OnConflict(goqu.DoUpdate(df.uniqueKey, df.set)).Rows(rows).ToSQL()
 	}
 	return df.wrapper.Insert(table).Rows(rows).ToSQL()
 }
@@ -140,5 +156,12 @@ func WithPageSize(page, size uint) Option {
 func WithErrDoNothing(in any) Option {
 	return func(obj *defaultOptions) {
 		obj.errDoNothing = true
+	}
+}
+
+// WithUniKey 唯一索引
+func WithUniKey(in string) Option {
+	return func(obj *defaultOptions) {
+		obj.uniqueKey = in
 	}
 }
