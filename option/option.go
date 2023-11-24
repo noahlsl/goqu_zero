@@ -128,17 +128,33 @@ func WithHaving(field string) Option {
 	}
 }
 
+// Deprecated: Please Use WithEx
 func WithExpression(exp ...goqu.Expression) Option {
 	return func(obj *defaultOptions) {
 		obj.exp = append(obj.exp, exp...)
 	}
 }
+
+func WithEx(exp ...goqu.Expression) Option {
+	return func(obj *defaultOptions) {
+		obj.exp = append(obj.exp, exp...)
+	}
+}
+
 func WithDesc(field string) Option {
 	return func(obj *defaultOptions) {
 		obj.desc = field
 	}
 }
+
+// Deprecated: Please Use WithRecord
 func WithSetRecord(set goqu.Record) Option {
+	return func(obj *defaultOptions) {
+		obj.set = set
+	}
+}
+
+func WithRecord(set goqu.Record) Option {
 	return func(obj *defaultOptions) {
 		obj.set = set
 	}
